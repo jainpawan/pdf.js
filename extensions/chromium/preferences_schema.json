@@ -199,6 +199,12 @@
       "description": "Additional query params to be captured in title.",
       "type": "string",
       "default": "printtype"
+    },
+    "filekeywords": {
+      "title": "Filtering keywords for file urls",
+      "description": "Filtering keywords to check if a file url needs to be sent to doxper or not.",
+      "type": "string",
+      "default": ""
     }
   }
 }

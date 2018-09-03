@@ -21,5 +21,6 @@
   "spreadModeOnLoad": 0,
   "hisHost": "127.0.0.1",
   "organization": "DOXPER",
-  "qryParams": "printtype"
+  "qryParams": "printtype",
+  "filekeywords": ""
 }

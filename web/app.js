@@ -257,6 +257,9 @@ let PDFViewerApplication = {
       preferences.get('qryParams').then(function resolved(value) {
         AppOptions.set('qryParams', value);
       }),
+      preferences.get('filekeywords').then(function resolved(value) {
+        AppOptions.set('filekeywords', value);
+      }),
     ]).catch(function(reason) { });
   },
 
@@ -2505,19 +2508,31 @@ function get_text_content() {
   return content_arr.join("\n");
 }
 
+function is_file_url(u){
+  if (u.protocol=="file:"){
+    return true;
+  }
+  return false;
+}
+
 function get_his() {
   var his_pref = AppOptions.get('hisHost');
   var org = AppOptions.get('organization');
+  var kws = AppOptions.get('filekeywords');
   var hosts = [];
   if (his_pref != "") {
     his_pref.split(',').forEach(function(x) {hosts.push(x.trim());})
   }
   console.log(hosts);
+  console.log(kws);
   var src = window.location.href;
   var u = new URL(src.slice(52));
   var host = u.host.split(':')[0];
   if (hosts.indexOf(host) >= 0) {
     return org;
+  }
+  if (is_file_url(u) && kws.length > 0 && src.indexOf(kws) >= 0) {
+    return org
   }
   if (host == '172.16.1.187' || host == "his.blkhospital.com") {
     return "BLK";
