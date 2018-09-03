@@ -18,5 +18,8 @@
   "disablePageMode": false,
   "disablePageLabels": false,
   "scrollModeOnLoad": 0,
-  "spreadModeOnLoad": 0
+  "spreadModeOnLoad": 0,
+  "hisHost": "127.0.0.1",
+  "organization": "DOXPER",
+  "qryParams": "printtype"
 }

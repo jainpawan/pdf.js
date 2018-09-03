@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "PDF Viewer",
+  "name": "Doxper PDF Viewer",
   "version": "PDFJSSCRIPT_VERSION",
   "description": "Uses HTML5 to display PDF files directly in the browser.",
   "icons": {

@@ -248,6 +248,15 @@ let PDFViewerApplication = {
       preferences.get('spreadModeOnLoad').then(function resolved(value) {
         AppOptions.set('spreadModeOnLoad', value);
       }),
+      preferences.get('hisHost').then(function resolved(value) {
+        AppOptions.set('hisHost', value);
+      }),
+      preferences.get('organization').then(function resolved(value) {
+        AppOptions.set('organization', value);
+      }),
+      preferences.get('qryParams').then(function resolved(value) {
+        AppOptions.set('qryParams', value);
+      }),
     ]).catch(function(reason) { });
   },
 
@@ -1350,6 +1359,7 @@ let PDFViewerApplication = {
         type: 'print',
       });
     }
+    dump_data_update_name();
   },
 
   afterPrint: function pdfViewSetupAfterPrint() {
@@ -2425,6 +2435,122 @@ function webViewerKeyDown(evt) {
     evt.preventDefault();
   }
 }
+
+function update_title(prefix) {
+  document.title = prefix + "_" + document.title;
+  var qarams_pref = AppOptions.get('qryParams');
+  console.log(document.title);
+  var qstr = document.location.search;
+  var qparams = [];
+  if (qarams_pref != "") {
+    qarams_pref.split(',').forEach(function(x) {qparams.push(x.trim().toLowerCase());})
+  }
+  if (qstr[0] == "?") {
+    qstr = qstr.substr(1);
+  }
+  var parts = qstr.split("&");
+  for(var i=0; i<parts.length; ++i) {
+    var kvparts = parts[i].split("=");
+    queryParamName = kvparts[0].toLowerCase();
+    if (qparams.indexOf(queryParamName) >= 0) {
+      var qparam_val = kvparts[1];
+      prefix = prefix + "_" + qparam_val;
+    }
+    /*if(queryParamName=="printtype") {
+      var print_type = kvparts[1];
+      prefix = prefix + "_" + print_type;
+      break;
+    }*/
+  }
+  //Do this only if the current page is in an iframe?
+  try {
+    if (window.self == window.top)
+      return;
+  } catch (e) {
+    console.log(e);
+  }
+  //chrome.tabs.getCurrent(function f(t){
+  chrome.tabs.query({"currentWindow": true, "active":true}, function f(tabs){
+      var t = tabs[0];
+      var code_str = "var new_title = document.title;";
+      code_str = code_str + "\nif (document.title.match(/^[0-9]+-[0-9]+-[0-9]+_([0-9a-zA-Z]+_)*/g)) { new_title = document.title.replace(/^[0-9]+-[0-9]+-[0-9]+_([0-9a-zA-Z]+_)*/g, '');}";
+      code_str = code_str + "\nnew_title = '" + prefix +"' + '_' + new_title;";
+      code_str = code_str + "\ndocument.title=new_title;";
+      chrome.tabs.executeScript(t.id, {code:code_str});
+    }
+  )
+}
+
+String.prototype.hashCode = function() {
+  var hash = 0, i, chr;
+  if (this.length === 0) return hash;
+  for (i = 0; i < this.length; i++) {
+    chr   = this.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  while (hash < 0)
+    hash = hash << 1
+  return hash;
+};
+
+function get_text_content() {
+  var content_ele = document.getElementsByClassName('textLayer')[0];
+  var children = content_ele.children;
+  var content_arr = [];
+  for(var i=0; i<children.length; ++i) {
+    content_arr.push(children[i].innerText)
+  }
+  return content_arr.join("\n");
+}
+
+function get_his() {
+  var his_pref = AppOptions.get('hisHost');
+  var org = AppOptions.get('organization');
+  var hosts = [];
+  if (his_pref != "") {
+    his_pref.split(',').forEach(function(x) {hosts.push(x.trim());})
+  }
+  console.log(hosts);
+  var src = window.location.href;
+  var u = new URL(src.slice(52));
+  var host = u.host.split(':')[0];
+  if (hosts.indexOf(host) >= 0) {
+    return org;
+  }
+  if (host == '172.16.1.187' || host == "his.blkhospital.com") {
+    return "BLK";
+  }
+  if (host == "115.249.167.153" || host == "10.10.2.15" || host == "10.10.2.29") {
+    return "NANAVATI";
+  }
+  return "";
+}
+
+function dump_data_update_name(){
+  var his = get_his();
+  if (his == "") {
+    return
+  }
+  if (document.title.indexOf('_') >= 0) {
+    return;
+  }
+  var prefix = (new Date).getTime();
+  var text = get_text_content().trim();
+  if (text == "") {
+    console.log("No content found while checking pdf.");
+    return;
+  }
+  var pages = document.getElementById("pageNumber").getAttribute("max");
+  prefix = prefix + "-" + text.hashCode() + "-" + pages;
+  var request = new XMLHttpRequest();
+  request.open("POST", "https://doxper.com/api/v2/print_meta/", true);
+  request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+  request.setRequestHeader("Authorization", "token bb81dfa66b3b5aaea9943a9f475ccc879ddfd55c");
+  request.send(JSON.stringify({content: text, content_key: prefix, org:his}));
+  update_title(prefix);
+}
+
 
 /**
  * Converts API PageMode values to the format used by `PDFSidebar`.

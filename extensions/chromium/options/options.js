@@ -63,8 +63,13 @@ Promise.all([
   // Render options
   prefNames.forEach(function(prefName) {
     var prefSchema = schema[prefName];
+    console.log(prefSchema);
     if (!prefSchema.title) {
       // Don't show preferences if the title is missing.
+      return;
+    }
+    if (prefSchema.ignore) {
+      //Don't show ignored prefs
       return;
     }
 
@@ -84,6 +89,10 @@ Promise.all([
       renderPreference = renderEnumPref(prefSchema.title, prefName);
     } else if (prefName === 'defaultZoomValue') {
       renderPreference = renderDefaultZoomValue(prefSchema.title);
+    } else if (prefSchema.type === 'string') {
+      renderPreference = renderStringPref(prefSchema.title,
+                                           prefSchema.description,
+                                           prefName);
     } else {
       // Should NEVER be reached. Only happens if a new type of preference is
       // added to the storage manifest.
@@ -197,6 +206,23 @@ function renderDefaultZoomValue(shortDescription) {
     } else {
       customOption.hidden = true;
     }
+  }
+  return renderPreference;
+}
+
+function renderStringPref(shortDescription, description, prefName) {
+  var wrapper = importTemplate(prefName + '-template');
+  var inp = wrapper.querySelector('input');
+  inp.onchange = function() {
+    var pref = {};
+    pref[prefName] = this.value;
+    storageArea.set(pref);
+  };
+  wrapper.querySelector('span').textContent = shortDescription;
+  document.getElementById('settings-boxes').appendChild(wrapper);
+
+  function renderPreference(value) {
+    inp.value = value;
   }
   return renderPreference;
 }
