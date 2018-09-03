@@ -2451,7 +2451,7 @@ function update_title(prefix) {
   var parts = qstr.split("&");
   for(var i=0; i<parts.length; ++i) {
     var kvparts = parts[i].split("=");
-    queryParamName = kvparts[0].toLowerCase();
+    var queryParamName = kvparts[0].toLowerCase();
     if (qparams.indexOf(queryParamName) >= 0) {
       var qparam_val = kvparts[1];
       prefix = prefix + "_" + qparam_val;
@@ -2472,8 +2472,9 @@ function update_title(prefix) {
   //chrome.tabs.getCurrent(function f(t){
   chrome.tabs.query({"currentWindow": true, "active":true}, function f(tabs){
       var t = tabs[0];
+      var prefix_regex = "^[0-9]+-[0-9]+-[0-9]+_([0-9a-zA-Z]+_)*";
       var code_str = "var new_title = document.title;";
-      code_str = code_str + "\nif (document.title.match(/^[0-9]+-[0-9]+-[0-9]+_([0-9a-zA-Z]+_)*/g)) { new_title = document.title.replace(/^[0-9]+-[0-9]+-[0-9]+_([0-9a-zA-Z]+_)*/g, '');}";
+      code_str = code_str + "\nif (document.title.match(/" + prefix_regex + "/g)) { new_title = document.title.replace(/" + prefix_regex + "/g, '');}";
       code_str = code_str + "\nnew_title = '" + prefix +"' + '_' + new_title;";
       code_str = code_str + "\ndocument.title=new_title;";
       chrome.tabs.executeScript(t.id, {code:code_str});
@@ -2532,7 +2533,8 @@ function dump_data_update_name(){
   if (his == "") {
     return
   }
-  if (document.title.indexOf('_') >= 0) {
+  var dox_re = /[0-9]+-[0-9]+-[0-9]+_/i
+  if (dox_re.test(document.title)) {
     return;
   }
   var prefix = (new Date).getTime();
